@@ -1,6 +1,8 @@
 const dotenv=require('dotenv')
 const express = require('express')
 const connectDB=require('../config/db.js')
+const serverless = require('serverless-http'); 
+
 const itemRoutes=require('../routes/itemRoutes.js')
 const staticPageRoutes=require('../routes/staticPageRoutes.js')
 const servicePageRoutes=require('../routes/servicePageRoute.js')
