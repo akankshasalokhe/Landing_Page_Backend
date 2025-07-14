@@ -1,7 +1,8 @@
-const GalleryItem = require( '../models/galleryModel.js');
-const imagekit =require('../imagekitConfig.js');
+const GalleryItem = require('../models/galleryModel.js');
+const imagekit = require('../imagekitConfig.js');
 const fs = require('fs');
 
+// Upload image to ImageKit
 exports.uploadToImageKit = async (req, res) => {
   try {
     const file = req.file;
@@ -9,7 +10,7 @@ exports.uploadToImageKit = async (req, res) => {
       file: fs.readFileSync(file.path),
       fileName: file.originalname,
     });
-    fs.unlinkSync(file.path);
+    fs.unlinkSync(file.path); // delete temp file after upload
     res.json({ url: response.url });
   } catch (error) {
     console.error(error);
@@ -17,39 +18,43 @@ exports.uploadToImageKit = async (req, res) => {
   }
 };
 
+// Create gallery item
 exports.createGalleryItem = async (req, res) => {
   try {
     const newItem = new GalleryItem(req.body);
     const savedItem = await newItem.save();
-    res.status(201).json(savedItem);
+    res.status(201).json({ success: true, data: savedItem });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
+// ✅ Fixed: Get all gallery items
 exports.getGalleryItems = async (req, res) => {
   try {
     const items = await GalleryItem.find();
-    res.json(items);
+    res.status(200).json({ success: true, data: items }); // <-- updated
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// Update gallery item
 exports.updateGalleryItem = async (req, res) => {
   try {
     const updatedItem = await GalleryItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updatedItem);
+    res.json({ success: true, data: updatedItem });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
+// Delete gallery item
 exports.deleteGalleryItem = async (req, res) => {
   try {
     await GalleryItem.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Gallery item deleted' });
+    res.json({ success: true, message: 'Gallery item deleted' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
