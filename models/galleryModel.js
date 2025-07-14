@@ -12,4 +12,4 @@ const galleryItemSchema = new mongoose.Schema({
   src: { type: String, required: true }, // image URL or local path
 }, { timestamps: true });
 
-export default mongoose.model('GalleryItem', galleryItemSchema);
+module.exports=mongoose.model('GalleryItem', galleryItemSchema);

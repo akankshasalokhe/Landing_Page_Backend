@@ -2,7 +2,7 @@ const GalleryItem = require( '../models/galleryModel.js');
 const imagekit =require('../imagekitConfig.js');
 const fs = require('fs');
 
-export const uploadToImageKit = async (req, res) => {
+exports.uploadToImageKit = async (req, res) => {
   try {
     const file = req.file;
     const response = await imagekit.upload({
@@ -17,7 +17,7 @@ export const uploadToImageKit = async (req, res) => {
   }
 };
 
-export const createGalleryItem = async (req, res) => {
+exports.createGalleryItem = async (req, res) => {
   try {
     const newItem = new GalleryItem(req.body);
     const savedItem = await newItem.save();
@@ -27,7 +27,7 @@ export const createGalleryItem = async (req, res) => {
   }
 };
 
-export const getGalleryItems = async (req, res) => {
+exports.getGalleryItems = async (req, res) => {
   try {
     const items = await GalleryItem.find();
     res.json(items);
@@ -36,7 +36,7 @@ export const getGalleryItems = async (req, res) => {
   }
 };
 
-export const updateGalleryItem = async (req, res) => {
+exports.updateGalleryItem = async (req, res) => {
   try {
     const updatedItem = await GalleryItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updatedItem);
@@ -45,7 +45,7 @@ export const updateGalleryItem = async (req, res) => {
   }
 };
 
-export const deleteGalleryItem = async (req, res) => {
+exports.deleteGalleryItem = async (req, res) => {
   try {
     await GalleryItem.findByIdAndDelete(req.params.id);
     res.json({ message: 'Gallery item deleted' });
