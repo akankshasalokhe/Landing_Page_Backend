@@ -33,7 +33,7 @@ exports.createGalleryItem = async (req, res) => {
 // Get all gallery items
 exports.getGalleryItems = async (req, res) => {
   try {
-    const items = await GalleryItem.find();
+    const items = await GalleryItem.find().populate('category', 'name'); // only get category name
     res.status(200).json({ success: true, data: items });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
