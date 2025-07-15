@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middlewares/upload'); // ✅ uses temp/ disk storage
+const multer = require('multer');
 
 const {
   uploadToImageKit,
@@ -10,19 +10,15 @@ const {
   deleteGalleryItem,
 } = require('../controllers/galleryController');
 
-// Upload image to ImageKit and return URL
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Upload image
 router.post('/upload', upload.single('image'), uploadToImageKit);
 
-// Create a new gallery item
+// CRUD Routes
 router.post('/create', createGalleryItem);
-
-// Get all gallery items
 router.get('/get', getGalleryItems);
-
-// Update gallery item
-router.put('/update/:id', upload.single('image'), uploadToImageKit, updateGalleryItem);
-
-// Delete gallery item
+router.put('/update/:id', createGalleryItem); // Note: upload logic is now done on frontend
 router.delete('/delete/:id', deleteGalleryItem);
 
 module.exports = router;

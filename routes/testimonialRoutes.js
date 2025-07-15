@@ -1,4 +1,5 @@
 const express = require('express');
+const router = express.Router();
 const multer = require('multer');
 const {
   createTestimonial,
@@ -8,7 +9,6 @@ const {
 } = require('../controllers/testimonialController');
 
 const upload = multer({ storage: multer.memoryStorage() });
-const router = express.Router();
 
 router.post('/upload', upload.single('image'), createTestimonial);
 router.get('/get', getTestimonials);

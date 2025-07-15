@@ -1,16 +1,17 @@
 const GalleryItem = require('../models/galleryModel.js');
 const imagekit = require('../imagekitConfig.js');
-const fs = require('fs');
 
 // Upload image to ImageKit
 exports.uploadToImageKit = async (req, res) => {
   try {
     const file = req.file;
+    if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
     const response = await imagekit.upload({
-      file: fs.readFileSync(file.path),
+      file: file.buffer,
       fileName: file.originalname,
     });
-    fs.unlinkSync(file.path); // delete temp file after upload
+
     res.json({ url: response.url });
   } catch (error) {
     console.error(error);
@@ -29,11 +30,11 @@ exports.createGalleryItem = async (req, res) => {
   }
 };
 
-// ✅ Fixed: Get all gallery items
+// Get all gallery items
 exports.getGalleryItems = async (req, res) => {
   try {
     const items = await GalleryItem.find();
-    res.status(200).json({ success: true, data: items }); // <-- updated
+    res.status(200).json({ success: true, data: items });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -42,7 +43,11 @@ exports.getGalleryItems = async (req, res) => {
 // Update gallery item
 exports.updateGalleryItem = async (req, res) => {
   try {
-    const updatedItem = await GalleryItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedItem = await GalleryItem.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
     res.json({ success: true, data: updatedItem });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
