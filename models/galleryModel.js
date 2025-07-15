@@ -1,15 +1,20 @@
-// models/GalleryItem.js
 const mongoose = require('mongoose');
 
 const galleryItemSchema = new mongoose.Schema({
   title: { type: String, required: true },
   category: {
-    type: String,
-    enum: ['Awards', 'Certifications', 'Ceremony', 'Events'],
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'GalleryCategory',
     required: true,
   },
-  year: { type: String, required: function () { return this.category === 'Events'; } },
-  src: { type: String, required: true }, // image URL or local path
+  year: { type: String, required: function () { return this.categoryName === 'Events'; } },
+  src: { type: String, required: true },
 }, { timestamps: true });
 
-module.exports=mongoose.model('GalleryItem', galleryItemSchema);
+galleryItemSchema.virtual('categoryName').get(function () {
+  return this._categoryName;
+}).set(function (val) {
+  this._categoryName = val;
+});
+
+module.exports = mongoose.model('GalleryItem', galleryItemSchema);

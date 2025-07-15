@@ -9,6 +9,7 @@ const servicePageRoutes=require('../routes/servicePageRoute.js')
 const testimonialRoutes=require('../routes/testimonialRoutes.js')
 const contentSectionRoutes=require('../routes/contentSectionRoutes.js')
 const galleryRoutes=require('../routes/galleryRoutes.js')
+const categoryRoutes = require('../routes/categoryRoutes.js')
 
 const cors=require('cors')
 dotenv.config()
@@ -24,6 +25,7 @@ app.use('/api/staticpage',staticPageRoutes)
 app.use('/api/testimonial',testimonialRoutes)
 app.use('/api/contentsection',contentSectionRoutes)
 app.use('/api/gallery',galleryRoutes)
+app.use('/api/categories',categoryRoutes)
 
 app.get('/',(req,res)=>{
     res.send('Welcome to the Backend API')
