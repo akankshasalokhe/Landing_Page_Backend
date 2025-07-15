@@ -45,14 +45,25 @@ exports.updateGalleryItem = async (req, res) => {
   try {
     const updatedItem = await GalleryItem.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true }
+      {
+        title: req.body.title,
+        category: req.body.category,
+        year: req.body.year || '',
+        src: req.body.src,
+      },
+      { new: true, runValidators: true }
     );
+
+    if (!updatedItem) {
+      return res.status(404).json({ success: false, message: 'Item not found' });
+    }
+
     res.json({ success: true, data: updatedItem });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
 
 // Delete gallery item
 exports.deleteGalleryItem = async (req, res) => {

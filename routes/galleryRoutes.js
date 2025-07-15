@@ -18,7 +18,7 @@ router.post('/upload', upload.single('image'), uploadToImageKit);
 // CRUD Routes
 router.post('/create', createGalleryItem);
 router.get('/get', getGalleryItems);
-router.put('/update/:id', createGalleryItem); // Note: upload logic is now done on frontend
+router.put('/update/:id', updateGalleryItem); // Note: upload logic is now done on frontend
 router.delete('/delete/:id', deleteGalleryItem);
 
 module.exports = router;
