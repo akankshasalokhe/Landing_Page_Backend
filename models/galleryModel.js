@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const galleryItemSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  title: { type: String},
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'GalleryCategory',
