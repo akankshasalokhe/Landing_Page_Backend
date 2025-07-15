@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/upload'); // ✅ uses temp/ disk storage
+const upload = require('../middlewares/upload'); // ✅ uses temp/ disk storage
 
 const {
   uploadToImageKit,
