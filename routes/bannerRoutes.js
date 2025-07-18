@@ -7,7 +7,8 @@ router.get('/get', bannerController.getAllBanners);
 router.get('/get/:page', bannerController.getBannersByPage);
 router.get('/pages', bannerController.getBannerPages);
 router.post('/create', upload.single('file'), bannerController.createBanner);
-router.post('/update/:id', upload.single('file'), bannerController.updateBanner);
+router.put('/update/:id', upload.single('file'), bannerController.updateBanner);
 router.delete('/delete/:id', bannerController.deleteBanner);
 
 module.exports = router;
+
