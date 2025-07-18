@@ -23,15 +23,18 @@ exports.createBanner = async (req, res) => {
     const { page } = req.body;
     const file = req.file;
 
-    if (!file || !page) return res.status(400).json({ message: 'Missing file or page' });
+    if (!file || !page) {
+      return res.status(400).json({ message: 'Missing file or page' });
+    }
 
-    const mimeType = mime.lookup(file.originalname);
-    const isVideo = mimeType.startsWith('video');
+    const mimeType = mime.lookup(file.originalname.toLowerCase()) || file.mimetype;
+    const isVideo = mimeType && mimeType.startsWith('video');
 
     const upload = await imagekit.upload({
       file: file.buffer,
       fileName: file.originalname,
-      folder: '/banners'
+      folder: '/banners',
+      fileType: isVideo ? 'video' : 'image'
     });
 
     const newBanner = new Banner({
@@ -44,7 +47,7 @@ exports.createBanner = async (req, res) => {
     await newBanner.save();
     res.status(201).json(newBanner);
   } catch (error) {
-    console.error(error);
+    console.error('Create Banner Error:', error);
     res.status(500).json({ message: 'Upload failed' });
   }
 };
@@ -63,13 +66,14 @@ exports.updateBanner = async (req, res) => {
         await imagekit.deleteFile(banner.imageKitFileId);
       }
 
-      const mimeType = mime.lookup(file.originalname);
-      const isVideo = mimeType.startsWith('video');
+      const mimeType = mime.lookup(file.originalname.toLowerCase()) || file.mimetype;
+      const isVideo = mimeType && mimeType.startsWith('video');
 
       const upload = await imagekit.upload({
         file: file.buffer,
         fileName: file.originalname,
-        folder: '/banners'
+        folder: '/banners',
+        fileType: isVideo ? 'video' : 'image'
       });
 
       banner.imageUrl = upload.url;
@@ -79,10 +83,9 @@ exports.updateBanner = async (req, res) => {
 
     banner.page = page;
     await banner.save();
-
     res.status(200).json(banner);
   } catch (error) {
-    console.error(error);
+    console.error('Update Banner Error:', error);
     res.status(500).json({ message: 'Update failed' });
   }
 };
@@ -99,6 +102,7 @@ exports.deleteBanner = async (req, res) => {
     await Banner.findByIdAndDelete(req.params.id);
     res.json({ message: 'Banner deleted' });
   } catch (error) {
+    console.error('Delete Banner Error:', error);
     res.status(500).json({ message: 'Deletion failed' });
   }
 };
