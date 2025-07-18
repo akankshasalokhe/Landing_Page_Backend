@@ -1,33 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middlewares/upload');
-const {
-  createServicePage,
-  getAllServicePages,
-  updateServicePage,
-  deleteServicePage,
-} = require('../controllers/servicePageController');
+const multer = require('multer');
+const { addService, updateService, getServices, deleteService } = require('../controllers/serviceController');
 
-router.post(
-  '/add',
-  upload.fields([
-    { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages', maxCount: 10 },
-  ]),
-  createServicePage
-);
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-router.get('/get', getAllServicePages);
-
-router.put(
-  '/update/:id',
-  upload.fields([
-    { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages', maxCount: 10 },
-  ]),
-  updateServicePage
-);
-
-router.delete('/delete/:id', deleteServicePage);
+router.get('/get', getServices);
+router.post('/add', upload.fields([
+  { name: 'serviceImage', maxCount: 1 },
+  { name: 'categoryImages', maxCount: 10 }
+]), addService);
+router.put('/update/:id', upload.fields([
+  { name: 'serviceImage', maxCount: 1 },
+  { name: 'categoryImages', maxCount: 10 }
+]), updateService);
+router.delete('/delete/:id', deleteService);
 
 module.exports = router;
