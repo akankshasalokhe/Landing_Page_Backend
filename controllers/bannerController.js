@@ -1,5 +1,6 @@
 const Banner = require('../models/bannerModel');
 const imagekit = require('../imagekitConfig');
+const mime = require('mime-types');
 
 exports.getAllBanners = async (req, res) => {
   const banners = await Banner.find();
@@ -24,6 +25,9 @@ exports.createBanner = async (req, res) => {
 
     if (!file || !page) return res.status(400).json({ message: 'Missing file or page' });
 
+    const mimeType = mime.lookup(file.originalname);
+    const isVideo = mimeType.startsWith('video');
+
     const upload = await imagekit.upload({
       file: file.buffer,
       fileName: file.originalname,
@@ -33,7 +37,8 @@ exports.createBanner = async (req, res) => {
     const newBanner = new Banner({
       page,
       imageUrl: upload.url,
-      imageKitFileId: upload.fileId
+      imageKitFileId: upload.fileId,
+      fileType: isVideo ? 'video' : 'image'
     });
 
     await newBanner.save();
@@ -58,6 +63,9 @@ exports.updateBanner = async (req, res) => {
         await imagekit.deleteFile(banner.imageKitFileId);
       }
 
+      const mimeType = mime.lookup(file.originalname);
+      const isVideo = mimeType.startsWith('video');
+
       const upload = await imagekit.upload({
         file: file.buffer,
         fileName: file.originalname,
@@ -66,6 +74,7 @@ exports.updateBanner = async (req, res) => {
 
       banner.imageUrl = upload.url;
       banner.imageKitFileId = upload.fileId;
+      banner.fileType = isVideo ? 'video' : 'image';
     }
 
     banner.page = page;
