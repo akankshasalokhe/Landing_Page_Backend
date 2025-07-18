@@ -1,5 +1,5 @@
-const Banner = require('../models/Banner');
-const imagekit = require('../utils/imagekit');
+const Banner = require('../models/bannerModel');
+const imagekit = require('../imagekitConfig');
 
 exports.getAllBanners = async (req, res) => {
   const banners = await Banner.find();
