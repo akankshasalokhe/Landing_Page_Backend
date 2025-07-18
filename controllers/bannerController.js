@@ -1,108 +1,99 @@
 const Banner = require('../models/bannerModel');
 const imagekit = require('../imagekitConfig');
-const mime = require('mime-types');
 
-exports.getAllBanners = async (req, res) => {
-  const banners = await Banner.find();
-  res.json(banners);
-};
-
-exports.getBannersByPage = async (req, res) => {
-  const banners = await Banner.find({ page: req.params.page });
-  res.json(banners);
-};
-
-exports.getBannerPages = async (req, res) => {
-  const banners = await Banner.find({}, 'page');
-  const pages = [...new Set(banners.map(b => b.page))];
-  res.json(pages);
-};
+const getFileType = (mimetype) => mimetype.startsWith('video') ? 'video' : 'image';
 
 exports.createBanner = async (req, res) => {
   try {
     const { page } = req.body;
     const file = req.file;
 
-    if (!file || !page) {
-      return res.status(400).json({ message: 'Missing file or page' });
-    }
+    if (!file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const mimeType = mime.lookup(file.originalname.toLowerCase()) || file.mimetype;
-    const isVideo = mimeType && mimeType.startsWith('video');
-
-    const upload = await imagekit.upload({
+    const uploaded = await imagekit.upload({
       file: file.buffer,
       fileName: file.originalname,
-      folder: '/banners',
-      fileType: isVideo ? 'video' : 'image'
+      folder: 'banners',
+      useUniqueFileName: true
     });
 
-    const newBanner = new Banner({
+    const banner = await Banner.create({
       page,
-      imageUrl: upload.url,
-      imageKitFileId: upload.fileId,
-      fileType: isVideo ? 'video' : 'image'
+      imageUrl: uploaded.url,
+      imageKitFileId: uploaded.fileId,
+      fileType: getFileType(file.mimetype)
     });
 
-    await newBanner.save();
-    res.status(201).json(newBanner);
-  } catch (error) {
-    console.error('Create Banner Error:', error);
-    res.status(500).json({ message: 'Upload failed' });
+    res.status(201).json(banner);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Upload failed' });
   }
 };
 
 exports.updateBanner = async (req, res) => {
   try {
-    const { id } = req.params;
     const { page } = req.body;
-    const file = req.file;
+    const banner = await Banner.findById(req.params.id);
+    if (!banner) return res.status(404).json({ error: 'Not found' });
 
-    const banner = await Banner.findById(id);
-    if (!banner) return res.status(404).json({ message: 'Banner not found' });
+    if (req.file) {
+      await imagekit.deleteFile(banner.imageKitFileId);
 
-    if (file) {
-      if (banner.imageKitFileId) {
-        await imagekit.deleteFile(banner.imageKitFileId);
-      }
-
-      const mimeType = mime.lookup(file.originalname.toLowerCase()) || file.mimetype;
-      const isVideo = mimeType && mimeType.startsWith('video');
-
-      const upload = await imagekit.upload({
-        file: file.buffer,
-        fileName: file.originalname,
-        folder: '/banners',
-        fileType: isVideo ? 'video' : 'image'
+      const uploaded = await imagekit.upload({
+        file: req.file.buffer,
+        fileName: req.file.originalname,
+        folder: 'banners',
+        useUniqueFileName: true
       });
 
-      banner.imageUrl = upload.url;
-      banner.imageKitFileId = upload.fileId;
-      banner.fileType = isVideo ? 'video' : 'image';
+      banner.imageUrl = uploaded.url;
+      banner.imageKitFileId = uploaded.fileId;
+      banner.fileType = getFileType(req.file.mimetype);
     }
 
     banner.page = page;
     await banner.save();
-    res.status(200).json(banner);
-  } catch (error) {
-    console.error('Update Banner Error:', error);
-    res.status(500).json({ message: 'Update failed' });
+    res.json(banner);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Update failed' });
   }
 };
 
 exports.deleteBanner = async (req, res) => {
   try {
-    const banner = await Banner.findById(req.params.id);
-    if (!banner) return res.status(404).json({ message: 'Not found' });
+    const banner = await Banner.findByIdAndDelete(req.params.id);
+    if (!banner) return res.status(404).json({ error: 'Not found' });
+    await imagekit.deleteFile(banner.imageKitFileId);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Delete failed' });
+  }
+};
 
-    if (banner.imageKitFileId) {
-      await imagekit.deleteFile(banner.imageKitFileId);
-    }
+exports.getBanners = async (req, res) => {
+  const banners = await Banner.find().sort({ createdAt: -1 });
+  res.json(banners);
+};
 
-    await Banner.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Banner deleted' });
-  } catch (error) {
-    console.error('Delete Banner Error:', error);
-    res.status(500).json({ message: 'Deletion failed' });
+exports.getPages = async (req, res) => {
+  try {
+    const pages = await Banner.distinct('page');
+    res.json(pages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch pages' });
+  }
+};
+exports.getBannersByPage = async (req, res) => {
+  try {
+    const pageName = req.params.pageName;
+    const banners = await Banner.find({ page: pageName }).sort({ createdAt: -1 });
+    res.json(banners);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch banners by page' });
   }
 };

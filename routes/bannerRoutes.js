@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/upload');
 const bannerController = require('../controllers/bannerController');
-const upload = require('../middlewares/upload.js');
 
-router.get('/get', bannerController.getAllBanners);
-router.get('/pages', bannerController.getBannerPages);
-router.get('/:page', bannerController.getBannersByPage);
+router.get('/get', bannerController.getBanners);
+router.get('/pages', bannerController.getPages);
 router.post('/create', upload.single('file'), bannerController.createBanner);
 router.put('/update/:id', upload.single('file'), bannerController.updateBanner);
 router.delete('/delete/:id', bannerController.deleteBanner);
+router.get('/page/:pageName', bannerController.getBannersByPage);
+
 
 module.exports = router;

@@ -5,6 +5,6 @@ const bannerSchema = new mongoose.Schema({
   imageUrl: { type: String, required: true },
   imageKitFileId: { type: String, required: true },
   fileType: { type: String, default: 'image' } // 'image' or 'video'
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Banner', bannerSchema);
