@@ -1,29 +1,37 @@
 const Banner = require('../models/bannerModel');
 const imagekit = require('../imagekitConfig');
 
-// GET all banners
+// Get all banners
 exports.getAllBanners = async (req, res) => {
   try {
     const banners = await Banner.find();
     res.status(200).json(banners);
   } catch (error) {
-    console.error('Error fetching banners:', error);
     res.status(500).json({ message: 'Failed to fetch banners', error: error.message });
   }
 };
 
-// GET banners by page
+// Get banners by page
 exports.getBannersByPage = async (req, res) => {
   try {
     const banners = await Banner.find({ page: req.params.page });
     res.status(200).json(banners);
   } catch (error) {
-    console.error('Error fetching banners by page:', error);
-    res.status(500).json({ message: 'Failed to fetch banners', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch banners by page', error: error.message });
   }
 };
 
-// POST create banner
+// Get unique page names from existing banners
+exports.getBannerPages = async (req, res) => {
+  try {
+    const pages = await Banner.distinct('page');
+    res.status(200).json(pages);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch banner pages', error: error.message });
+  }
+};
+
+// Create a new banner
 exports.createBanner = async (req, res) => {
   try {
     const { page, file, fileName } = req.body;
@@ -42,12 +50,11 @@ exports.createBanner = async (req, res) => {
     await banner.save();
     res.status(201).json(banner);
   } catch (error) {
-    console.error('Error creating banner:', error);
     res.status(500).json({ message: 'Failed to create banner', error: error.message });
   }
 };
 
-// PUT update banner
+// Update a banner
 exports.updateBanner = async (req, res) => {
   try {
     const { id } = req.params;
@@ -56,7 +63,6 @@ exports.updateBanner = async (req, res) => {
     const banner = await Banner.findById(id);
     if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
-    // Delete old image if new one is provided
     let imageUrl = banner.imageUrl;
     let imageId = banner.imageId;
 
@@ -74,23 +80,26 @@ exports.updateBanner = async (req, res) => {
     await banner.save();
     res.status(200).json(banner);
   } catch (error) {
-    console.error('Error updating banner:', error);
     res.status(500).json({ message: 'Failed to update banner', error: error.message });
   }
 };
 
-// DELETE banner
+// Delete a banner and return updated page list
 exports.deleteBanner = async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.id);
     if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
+    const deletedPage = banner.page;
     await imagekit.deleteFile(banner.imageId);
     await banner.remove();
 
-    res.status(200).json({ message: 'Banner deleted successfully' });
+    // Check if any banners are left for that page
+    const remaining = await Banner.find({ page: deletedPage });
+    const message = remaining.length === 0 ? 'Banner and empty page removed' : 'Banner deleted';
+
+    res.status(200).json({ message });
   } catch (error) {
-    console.error('Error deleting banner:', error);
     res.status(500).json({ message: 'Failed to delete banner', error: error.message });
   }
 };
