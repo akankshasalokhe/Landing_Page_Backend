@@ -3,32 +3,31 @@ const router = express.Router();
 const upload = require('../middlewares/upload');
 const {
   createServicePage,
-  updateServicePage,
   getAllServicePages,
-  getServicePageById,
+  updateServicePage,
   deleteServicePage,
-} = require('../controllers');
+} = require('../controllers/servicePageController');
 
 router.post(
   '/add',
   upload.fields([
     { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages', maxCount: 20 },
+    { name: 'categoryImages', maxCount: 10 },
   ]),
   createServicePage
 );
+
+router.get('/get', getAllServicePages);
 
 router.put(
   '/update/:id',
   upload.fields([
     { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages', maxCount: 20 },
+    { name: 'categoryImages', maxCount: 10 },
   ]),
   updateServicePage
 );
 
-router.get('/get', getAllServicePages);
-router.get('/get/:id', getServicePageById);
 router.delete('/delete/:id', deleteServicePage);
 
 module.exports = router;
