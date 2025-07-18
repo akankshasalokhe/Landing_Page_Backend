@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 const socialLinkSchema = new mongoose.Schema({
-  image: String, // base64 or image URL
-  link: String,
+  type: { type: String },         // e.g., Facebook, Play Store
+  image: { type: String },        // image URL
+  link: { type: String },         // redirect URL
 });
 
 const footerSchema = new mongoose.Schema({

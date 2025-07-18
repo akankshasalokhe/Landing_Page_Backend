@@ -1,6 +1,6 @@
 const Footer = require('../models/footerModel');
 
-// Get footer
+// GET footer (single document)
 exports.getFooter = async (req, res) => {
   try {
     const footer = await Footer.findOne();
@@ -10,7 +10,7 @@ exports.getFooter = async (req, res) => {
   }
 };
 
-// Create footer (not used directly in frontend)
+// CREATE footer (optional use)
 exports.createFooter = async (req, res) => {
   try {
     const footer = new Footer(req.body);
@@ -21,12 +21,12 @@ exports.createFooter = async (req, res) => {
   }
 };
 
-// Update footer (used in frontend with PUT)
+// UPDATE footer
 exports.updateFooter = async (req, res) => {
   try {
     const updated = await Footer.findOneAndUpdate({}, req.body, {
       new: true,
-      upsert: true, // create if doesn't exist
+      upsert: true, // create if not exists
     });
     res.json(updated);
   } catch (error) {
@@ -34,11 +34,11 @@ exports.updateFooter = async (req, res) => {
   }
 };
 
-// Delete footer (optional)
+// DELETE all footer records (optional)
 exports.deleteFooter = async (req, res) => {
   try {
     await Footer.deleteMany();
-    res.json({ message: 'Footer deleted' });
+    res.json({ message: 'Footer deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
