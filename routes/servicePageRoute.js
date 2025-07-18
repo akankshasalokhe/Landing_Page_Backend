@@ -7,7 +7,7 @@ const {
   getAllServicePages,
   getServicePageById,
   deleteServicePage,
-} = require('../controllers/servicePageController');
+} = require('../controllers');
 
 router.post(
   '/add',
