@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middlewares/multerConfig');
+const upload = require('../middlewares/upload');
 const {
   createServicePage,
   updateServicePage,
