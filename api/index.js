@@ -31,8 +31,8 @@ app.use('/api/categories',categoryRoutes)
 app.use('/api/footer',footerRoutes)
 app.use('/api/banner',bannerRoutes)
 
-app.use(express.json({ limit: '25mb' }));
-app.use(express.urlencoded({ limit: '1024mb', extended: true }));
+// app.use(express.json({ limit: '25mb' }));
+// app.use(express.urlencoded({ limit: '1024mb', extended: true }));
 
 
 app.get('/',(req,res)=>{
