@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/upload');
+const upload = require('../middlewares/upload.js');
 const bannerController = require('../controllers/bannerController');
 
 router.get('/get', bannerController.getBanners);
