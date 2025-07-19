@@ -74,8 +74,13 @@ exports.deleteBanner = async (req, res) => {
 };
 
 exports.getBanners = async (req, res) => {
-  const banners = await Banner.find().sort({ createdAt: -1 });
-  res.json(banners);
+  try {
+    const banners = await Banner.find().sort({ createdAt: -1 });
+    res.json(banners);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch banners' });
+  }
 };
 
 exports.getPages = async (req, res) => {
@@ -87,6 +92,7 @@ exports.getPages = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch pages' });
   }
 };
+
 exports.getBannersByPage = async (req, res) => {
   try {
     const pageName = req.params.pageName;
