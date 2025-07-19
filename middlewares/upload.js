@@ -1,12 +1,16 @@
 // middlewares/upload.js
 const multer = require('multer');
+const path = require('path');
 
-const storage = multer.memoryStorage(); // ensure memory storage is used
+// Use in-memory storage
+const storage = multer.memoryStorage();
 
+// Accept both image and video file types
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedTypes = ['.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mov', '.avi', '.mkv'];
 
-  if (allowedTypes.includes(file.mimetype)) {
+  if (allowedTypes.includes(ext)) {
     cb(null, true);
   } else {
     cb(new Error('Unsupported file type'), false);
@@ -17,8 +21,6 @@ const upload = multer({ storage, fileFilter });
 
 module.exports = upload;
 
-
-module.exports = upload;
 
 // const multer = require('multer');
 // const storage = multer.memoryStorage(); // Store file in memory
