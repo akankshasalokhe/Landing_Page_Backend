@@ -1,3 +1,4 @@
+// routes/servicePageRoutes.js
 const express = require('express');
 const router = express.Router();
 const upload = require('../middlewares/upload');
@@ -9,10 +10,10 @@ const {
 } = require('../controllers/servicePageController');
 
 router.post(
-  '/add',
+  '/create',
   upload.fields([
     { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages', maxCount: 50 },
+    { name: 'categoryImages', maxCount: 100 },
   ]),
   createServicePage
 );
@@ -21,7 +22,7 @@ router.put(
   '/update/:id',
   upload.fields([
     { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages', maxCount: 50 },
+    { name: 'categoryImages', maxCount: 100 },
   ]),
   updateServicePage
 );
