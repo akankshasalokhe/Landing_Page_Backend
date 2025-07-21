@@ -31,7 +31,7 @@ app.use('/api/gallery',galleryRoutes)
 app.use('/api/categories',categoryRoutes)
 app.use('/api/footer',footerRoutes)
 app.use('/api/banner',bannerRoutes)
-app.use('/api/contactus',contactUsRoutes)
+app.use('/api/contact',contactUsRoutes)
 
 // app.use(express.json({ limit: '25mb' }));
 // app.use(express.urlencoded({ limit: '1024mb', extended: true }));
