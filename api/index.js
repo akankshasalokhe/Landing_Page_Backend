@@ -12,6 +12,7 @@ const galleryRoutes=require('../routes/galleryRoutes.js')
 const categoryRoutes = require('../routes/categoryRoutes.js')
 const footerRoutes = require('../routes/footerRoutes.js')
 const bannerRoutes = require('../routes/bannerRoutes.js')
+const contactUsRoutes = require('../routes/contactUsRoutes.js')
 
 const cors=require('cors')
 dotenv.config()
@@ -30,6 +31,7 @@ app.use('/api/gallery',galleryRoutes)
 app.use('/api/categories',categoryRoutes)
 app.use('/api/footer',footerRoutes)
 app.use('/api/banner',bannerRoutes)
+app.use('api/contactus',contactUsRoutes)
 
 // app.use(express.json({ limit: '25mb' }));
 // app.use(express.urlencoded({ limit: '1024mb', extended: true }));
