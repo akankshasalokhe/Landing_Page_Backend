@@ -28,15 +28,70 @@ exports.submitContactForm = async (req, res) => {
 };
 
 // Get all contact submissions
+// exports.getAllContacts = async (req, res) => {
+//   try {
+//     const contacts = await ContactUs.find().sort({ createdAt: -1 });
+//     res.json(contacts);
+//   } catch (error) {
+//     console.error('Fetch error:', error);
+//     res.status(500).json({ message: 'Failed to fetch contact submissions' });
+//   }
+// };
+
 exports.getAllContacts = async (req, res) => {
   try {
-    const contacts = await ContactUs.find().sort({ createdAt: -1 });
-    res.json(contacts);
+    const {
+      page = 1,
+      limit = 5,
+      search = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      fromDate,
+      toDate
+    } = req.query;
+
+    const query = {};
+
+    // Search
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      query.$or = [
+        { FirstName: regex },
+        { LastName: regex },
+        { EmailAddress: regex },
+        { PhoneNo: regex },
+        { Services: regex },
+        { Message: regex },
+      ];
+    }
+
+    // Date filter
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) query.createdAt.$lte = new Date(toDate);
+    }
+
+    const total = await ContactUs.countDocuments(query);
+
+    const contacts = await ContactUs.find(query)
+      .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    res.json({
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+      data: contacts,
+    });
   } catch (error) {
     console.error('Fetch error:', error);
-    res.status(500).json({ message: 'Failed to fetch contact submissions' });
+    res.status(500).json({ message: 'Failed to fetch contacts' });
   }
 };
+
 
 // Delete contact submission by ID
 exports.deleteContact = async (req, res) => {
