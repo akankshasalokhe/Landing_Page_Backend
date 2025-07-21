@@ -1,20 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const contactUsController = require('../controllers/contactUsController');
+const {
+  submitContactForm,
+  getAllContacts,
+  deleteContact
+} = require('../controllers/contactUsController');
 
-// Create
-router.post('/submit', contactUsController.createContact);
+// POST /api/contact - Submit form
+router.post('/create', submitContactForm);
 
-// Read All
-router.get('/get', contactUsController.getAllContacts);
+// GET /api/contact - Get all submissions (Admin)
+router.get('/get', getAllContacts);
 
-// Read One
-router.get('/getbyId/:id', contactUsController.getContactById);
-
-// Update
-router.put('/update/:id', contactUsController.updateContact);
-
-// Delete
-router.delete('/delete/:id', contactUsController.deleteContact);
+// DELETE /api/contact/:id - Delete by ID (Admin)
+router.delete('/delete/:id', deleteContact);
 
 module.exports = router;

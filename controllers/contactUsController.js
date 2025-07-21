@@ -1,59 +1,57 @@
 const ContactUs = require('../models/contactUsModel');
 
-// Create Contact Entry
-exports.createContact = async (req, res) => {
+// Submit contact form
+exports.submitContactForm = async (req, res) => {
   try {
-    const contact = new ContactUs(req.body);
-    const saved = await contact.save();
-    res.status(201).json(saved);
+    const { FirstName, LastName, EmailAddress, PhoneNo, Services, Message } = req.body;
+
+    if (!FirstName || !LastName || !EmailAddress || !PhoneNo || !Services || !Message) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    const newContact = new ContactUs({
+      FirstName,
+      LastName,
+      EmailAddress,
+      PhoneNo,
+      Services,
+      Message
+    });
+
+    await newContact.save();
+
+    res.status(201).json({ message: 'Contact form submitted successfully' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Submit error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Get All Contact Entries
+// Get all contact submissions
 exports.getAllContacts = async (req, res) => {
   try {
     const contacts = await ContactUs.find().sort({ createdAt: -1 });
-    res.status(200).json(contacts);
+    res.json(contacts);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Fetch error:', error);
+    res.status(500).json({ message: 'Failed to fetch contact submissions' });
   }
 };
 
-// Get Contact by ID
-exports.getContactById = async (req, res) => {
-  try {
-    const contact = await ContactUs.findById(req.params.id);
-    if (!contact) return res.status(404).json({ error: 'Contact not found' });
-    res.status(200).json(contact);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Update Contact
-exports.updateContact = async (req, res) => {
-  try {
-    const updated = await ContactUs.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (!updated) return res.status(404).json({ error: 'Contact not found' });
-    res.status(200).json(updated);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// Delete Contact
+// Delete contact submission by ID
 exports.deleteContact = async (req, res) => {
   try {
-    const deleted = await ContactUs.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Contact not found' });
-    res.status(200).json({ message: 'Contact deleted successfully' });
+    const contact = await ContactUs.findById(req.params.id);
+
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+
+    await contact.remove();
+
+    res.json({ message: 'Contact deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Delete error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
