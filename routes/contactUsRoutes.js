@@ -1,37 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const ContactUs = require('../models/contactUsModel');
+const contactUsController = require('../controllers/contactUsController');
 
-// POST route - Save contact form
-router.post('/submit', async (req, res) => {
-  try {
-    const { FirstName, LastName, EmailAddress, PhoneNo, Services, Message } = req.body;
+// Create
+router.post('/submit', contactUsController.createContact);
 
-    const contact = new ContactUs({
-      FirstName,
-      LastName,
-      EmailAddress,
-      PhoneNo,
-      Services,
-      Message
-    });
+// Read All
+router.get('/get', contactUsController.getAllContacts);
 
-    await contact.save();
-    res.status(201).json({ message: 'Contact form submitted successfully', contact });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to submit contact form' });
-  }
-});
+// Read One
+router.get('/getbyId/:id', contactUsController.getContactById);
 
-// GET route - Get all contact form entries
-router.get('/get', async (req, res) => {
-  try {
-    const contacts = await ContactUs.find().sort({ createdAt: -1 });
-    res.status(200).json(contacts);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch contact data' });
-  }
-});
+// Update
+router.put('/update/:id', contactUsController.updateContact);
+
+// Delete
+router.delete('/delete/:id', contactUsController.deleteContact);
 
 module.exports = router;
