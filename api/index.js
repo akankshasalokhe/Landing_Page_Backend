@@ -28,6 +28,7 @@ app.use('/api/banner', require('../routes/bannerRoutes.js'));
 app.use('/api/contact', require('../routes/contactUsRoutes.js'));
 app.use('/api/serviceprovider', require('../routes/serviceProviderRoutes.js'));
 app.use('/api/earning',require('../routes/EarningInfoRoutes.js'))
+app.use('/api/partners',require('../routes/partnerRoutes.js'))
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Backend API');
