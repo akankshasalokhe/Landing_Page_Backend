@@ -95,15 +95,19 @@ exports.getAllContacts = async (req, res) => {
 
 // Delete contact submission by ID
 exports.deleteContact = async (req, res) => {
-  try {
-    const contact = await ContactUs.findById(req.params.id);
+  const { id } = req.params;
 
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid ID format' });
+  }
+
+  try {
+    const contact = await ContactUs.findById(id);
     if (!contact) {
       return res.status(404).json({ message: 'Contact not found' });
     }
 
     await contact.remove();
-
     res.json({ message: 'Contact deleted successfully' });
   } catch (error) {
     console.error('Delete error:', error);
