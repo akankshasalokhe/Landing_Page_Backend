@@ -47,5 +47,11 @@ app.get('/',(req,res)=>{
     res.send('Welcome to the Backend API')
 })
 
+const PORT = process.env.PORT || 5001;
+
+app.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
+});
+
 module.exports = app;
 module.exports.handler = serverless(app);
