@@ -1,57 +1,36 @@
-const dotenv=require('dotenv')
-const express = require('express')
-const connectDB=require('../config/db.js')
-const serverless = require('serverless-http'); 
-const path = require('path'); 
+const express = require("express");
+const serverless = require("serverless-http");
+const cors = require("cors");
+const path = require("path");
+const dotenv = require("dotenv");
+const connectDB = require("../config/db.js");
 
+dotenv.config();
+connectDB();
 
-const itemRoutes=require('../routes/itemRoutes.js')
-const staticPageRoutes=require('../routes/staticPageRoutes.js')
-const servicePageRoutes=require('../routes/servicePageRoute.js')
-const testimonialRoutes=require('../routes/testimonialRoutes.js')
-const contentSectionRoutes=require('../routes/contentSectionRoutes.js')
-const galleryRoutes=require('../routes/galleryRoutes.js')
-const categoryRoutes = require('../routes/categoryRoutes.js')
-const footerRoutes = require('../routes/footerRoutes.js')
-const bannerRoutes = require('../routes/bannerRoutes.js')
-const contactUsRoutes = require('../routes/contactUsRoutes.js')
-const serviceProvideRoutes = require('../routes/serviceProviderRoutes.js')
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-const cors=require('cors')
-dotenv.config()
-connectDB()
-
-const app=express()
-app.use(cors())
-app.use(express.json())
+// If you serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Routes
+app.use('/api/servicepage', require('../routes/servicePageRoute.js'));
+app.use('/api/item', require('../routes/itemRoutes.js'));
+app.use('/api/staticpage', require('../routes/staticPageRoutes.js'));
+app.use('/api/testimonial', require('../routes/testimonialRoutes.js'));
+app.use('/api/contentsection', require('../routes/contentSectionRoutes.js'));
+app.use('/api/gallery', require('../routes/galleryRoutes.js'));
+app.use('/api/categories', require('../routes/categoryRoutes.js'));
+app.use('/api/footer', require('../routes/footerRoutes.js'));
+app.use('/api/banner', require('../routes/bannerRoutes.js'));
+app.use('/api/contact', require('../routes/contactUsRoutes.js'));
+app.use('/api/serviceprovider', require('../routes/serviceProviderRoutes.js'));
 
-app.use('/api/servicepage',servicePageRoutes)
-app.use('/api/item',itemRoutes)
-app.use('/api/staticpage',staticPageRoutes)
-app.use('/api/testimonial',testimonialRoutes)
-app.use('/api/contentsection',contentSectionRoutes)
-app.use('/api/gallery',galleryRoutes)
-app.use('/api/categories',categoryRoutes)
-app.use('/api/footer',footerRoutes)
-app.use('/api/banner',bannerRoutes)
-app.use('/api/contact', contactUsRoutes);
-app.use('/api/serviceprovider',serviceProvideRoutes)
-
-// app.use(express.json({ limit: '25mb' }));
-// app.use(express.urlencoded({ limit: '1024mb', extended: true }));
-
-
-app.get('/',(req,res)=>{
-    res.send('Welcome to the Backend API')
-})
-
-// const PORT = process.env.PORT || 5001;
-
-// app.listen(PORT, () => {
-//   console.log(`✅ Server running at http://localhost:${PORT}`);
-// });
+app.get('/', (req, res) => {
+  res.send('Welcome to the Backend API');
+});
 
 module.exports = app;
 module.exports.handler = serverless(app);
