@@ -94,23 +94,18 @@ exports.getAllContacts = async (req, res) => {
 
 
 // Delete contact submission by ID
+
 exports.deleteContact = async (req, res) => {
-  const { id } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ message: 'Invalid ID format' });
-  }
-
   try {
-    const contact = await ContactUs.findById(id);
+    const contact = await ContactUs.findById(req.params.id);
     if (!contact) {
       return res.status(404).json({ message: 'Contact not found' });
     }
-
-    await contact.remove();
+    await contact.deleteOne(); // Use deleteOne() or findByIdAndDelete
     res.json({ message: 'Contact deleted successfully' });
   } catch (error) {
     console.error('Delete error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
