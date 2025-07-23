@@ -44,12 +44,27 @@ exports.createPartner = async (req, res) => {
 // READ ALL
 exports.getAllPartners = async (req, res) => {
   try {
-    const partners = await Partner.find().sort({ createdAt: -1 });
-    res.json(partners);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Partner.countDocuments();
+    const partners = await Partner.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      data: partners,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+    });
   } catch (err) {
     res.status(500).json({ message: "Fetch failed", error: err.message });
   }
 };
+
 
 // READ ONE
 exports.getPartnerById = async (req, res) => {
