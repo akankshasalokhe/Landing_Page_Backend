@@ -8,26 +8,27 @@ const uploadToImageKit = async (fileBuffer, fileName) => {
   });
 };
 
+// ✅ Create Service
 exports.createService = async (req, res) => {
   try {
-    const {
-      servicetitle,
-      titleDescArray,
-      categoryname,
-    } = req.body;
-
+    const { servicetitle, titleDescArray, categoryname } = req.body;
     const parsedTitleDesc = JSON.parse(titleDescArray);
     const parsedCategories = JSON.parse(categoryname);
 
-    const files = req.files || [];
+    const files = req.files || {};
     let serviceImageUrl = null;
     const catImageMap = {};
 
-    for (let file of files) {
-      if (file.fieldname === 'serviceImage') {
-        const uploaded = await uploadToImageKit(file.buffer, file.originalname);
-        serviceImageUrl = uploaded.url;
-      } else if (file.fieldname === 'categoryImages') {
+    // Upload serviceImage
+    if (files.serviceImage?.length) {
+      const file = files.serviceImage[0];
+      const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+      serviceImageUrl = uploaded.url;
+    }
+
+    // Upload categoryImages
+    if (files.categoryImages?.length) {
+      for (let file of files.categoryImages) {
         const [prefix] = file.originalname.split("-");
         if (!catImageMap[prefix]) catImageMap[prefix] = [];
         const uploaded = await uploadToImageKit(file.buffer, file.originalname);
@@ -50,11 +51,12 @@ exports.createService = async (req, res) => {
 
     res.status(201).json({ success: true, data: service });
   } catch (err) {
-    console.error(err);
+    console.error("Create Error:", err);
     res.status(500).json({ success: false, error: 'Create failed' });
   }
 };
 
+// ✅ Get All Services
 exports.getAllServices = async (req, res) => {
   try {
     const services = await ServicePage.find();
@@ -64,27 +66,28 @@ exports.getAllServices = async (req, res) => {
   }
 };
 
+// ✅ Update Service
 exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      servicetitle,
-      titleDescArray,
-      categoryname,
-    } = req.body;
-
+    const { servicetitle, titleDescArray, categoryname } = req.body;
     const parsedTitleDesc = JSON.parse(titleDescArray);
     const parsedCategories = JSON.parse(categoryname);
 
-    const files = req.files || [];
+    const files = req.files || {};
     let serviceImageUrl = null;
     const catImageMap = {};
 
-    for (let file of files) {
-      if (file.fieldname === 'serviceImage') {
-        const uploaded = await uploadToImageKit(file.buffer, file.originalname);
-        serviceImageUrl = uploaded.url;
-      } else if (file.fieldname === 'categoryImages') {
+    // Upload serviceImage
+    if (files.serviceImage?.length) {
+      const file = files.serviceImage[0];
+      const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+      serviceImageUrl = uploaded.url;
+    }
+
+    // Upload categoryImages
+    if (files.categoryImages?.length) {
+      for (let file of files.categoryImages) {
         const [prefix] = file.originalname.split("-");
         if (!catImageMap[prefix]) catImageMap[prefix] = [];
         const uploaded = await uploadToImageKit(file.buffer, file.originalname);
@@ -102,7 +105,7 @@ exports.updateService = async (req, res) => {
       id,
       {
         servicetitle,
-        serviceImage: serviceImageUrl,
+        ...(serviceImageUrl && { serviceImage: serviceImageUrl }),
         titleDescArray: parsedTitleDesc,
         categoryname: finalCategories,
       },
@@ -111,11 +114,12 @@ exports.updateService = async (req, res) => {
 
     res.json({ success: true, data: updated });
   } catch (err) {
-    console.error(err);
+    console.error("Update Error:", err);
     res.status(500).json({ success: false, error: 'Update failed' });
   }
 };
 
+// ✅ Delete Service
 exports.deleteService = async (req, res) => {
   try {
     await ServicePage.findByIdAndDelete(req.params.id);
