@@ -1,28 +1,36 @@
 const ServicePage = require('../models/servicePageModel');
-const uploadToImageKit = require('../imagekitConfig'); // adjust path as needed
+const uploadToImageKit = require('../imagekitConfig');
+
+const uploadMultipleFiles = async (files, folder) => {
+  return await Promise.all(
+    files.map((file) =>
+      uploadToImageKit(file, folder)
+    )
+  );
+};
 
 const createServicePage = async (req, res) => {
   try {
     const { servicetitle, titleDescArray, categoryname } = req.body;
 
-    const parsedTitleDescArray = JSON.parse(titleDescArray);
-    const parsedCategoryname = JSON.parse(categoryname);
-    const files = req.files || {};
-
-    let serviceImageUrl = '';
-    const serviceImageFile = files['serviceImage']?.[0];
-
-    if (serviceImageFile) {
-      serviceImageUrl = await uploadToImageKit(serviceImageFile, 'serviceImages');
+    if (!servicetitle || !titleDescArray || !categoryname) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const categoryWithImages = await Promise.all(
-      parsedCategoryname.map(async (item, index) => {
-        const categoryFiles = files[`categoryImages${index}`] || [];
-        const imageUrls = await Promise.all(
-          categoryFiles.map(file => uploadToImageKit(file, 'categoryImages'))
-        );
+    const parsedTitleDescArray = JSON.parse(titleDescArray);
+    const parsedCategoryname = JSON.parse(categoryname);
 
+    const serviceImageFile = req.files?.serviceImage?.[0];
+    const serviceImageUrl = serviceImageFile ? await uploadToImageKit(serviceImageFile, 'serviceImages') : '';
+
+    const categoryImages = req.files?.categoryImages || [];
+
+    const categoryWithImages = await Promise.all(
+      parsedCategoryname.map(async (item) => {
+        const matchedFiles = categoryImages.filter((file) =>
+          file.originalname.startsWith(item.tempImagePrefix)
+        );
+        const imageUrls = await uploadMultipleFiles(matchedFiles, 'categoryImages');
         return {
           title: item.title,
           description: item.description,
@@ -53,22 +61,18 @@ const updateServicePage = async (req, res) => {
 
     const parsedTitleDescArray = JSON.parse(titleDescArray);
     const parsedCategoryname = JSON.parse(categoryname);
-    const files = req.files || {};
-    const serviceImageFile = files['serviceImage']?.[0];
 
-    let serviceImageUrl;
+    const serviceImageFile = req.files?.serviceImage?.[0];
+    const serviceImageUrl = serviceImageFile ? await uploadToImageKit(serviceImageFile, 'serviceImages') : undefined;
 
-    if (serviceImageFile) {
-      serviceImageUrl = await uploadToImageKit(serviceImageFile, 'serviceImages');
-    }
+    const categoryImages = req.files?.categoryImages || [];
 
     const categoryWithImages = await Promise.all(
-      parsedCategoryname.map(async (item, index) => {
-        const categoryFiles = files[`categoryImages${index}`] || [];
-        const imageUrls = await Promise.all(
-          categoryFiles.map(file => uploadToImageKit(file, 'categoryImages'))
+      parsedCategoryname.map(async (item) => {
+        const matchedFiles = categoryImages.filter((file) =>
+          file.originalname.startsWith(item.tempImagePrefix)
         );
-
+        const imageUrls = await uploadMultipleFiles(matchedFiles, 'categoryImages');
         return {
           title: item.title,
           description: item.description,
@@ -77,17 +81,16 @@ const updateServicePage = async (req, res) => {
       })
     );
 
-    const updatePayload = {
-      servicetitle,
-      titleDescArray: parsedTitleDescArray,
-      categoryname: categoryWithImages,
-    };
-
-    if (serviceImageUrl) updatePayload.serviceImage = serviceImageUrl;
-
-    const updated = await ServicePage.findByIdAndUpdate(id, updatePayload, { new: true });
-
-    if (!updated) return res.status(404).json({ message: 'ServicePage not found' });
+    const updated = await ServicePage.findByIdAndUpdate(
+      id,
+      {
+        servicetitle,
+        ...(serviceImageUrl && { serviceImage: serviceImageUrl }),
+        titleDescArray: parsedTitleDescArray,
+        categoryname: categoryWithImages,
+      },
+      { new: true }
+    );
 
     res.status(200).json({ message: 'ServicePage updated', data: updated });
   } catch (error) {
@@ -96,4 +99,29 @@ const updateServicePage = async (req, res) => {
   }
 };
 
-module.exports = { createServicePage, updateServicePage, getAllServicePages, deleteServicePage };
+const getAllServicePages = async (req, res) => {
+  try {
+    const services = await ServicePage.find().lean();
+    res.status(200).json({ data: services });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteServicePage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await ServicePage.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'ServicePage not found' });
+    res.status(200).json({ message: 'ServicePage deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  createServicePage,
+  updateServicePage,
+  getAllServicePages,
+  deleteServicePage
+};
