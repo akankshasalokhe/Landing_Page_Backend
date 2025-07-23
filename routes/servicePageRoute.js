@@ -9,7 +9,7 @@ router.post(
   '/create',
   upload.fields([
     { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages' },
+    { name: 'categoryImages', maxCount:100 },
   ]),
   controller.createService
 );
@@ -18,7 +18,7 @@ router.put(
   '/update/:id',
   upload.fields([
     { name: 'serviceImage', maxCount: 1 },
-    { name: 'categoryImages' },
+    { name: 'categoryImages',maxCount:100 },
   ]),
   controller.updateService
 );
