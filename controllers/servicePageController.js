@@ -1,13 +1,5 @@
 const ServicePage = require('../models/servicePageModel');
-const uploadToImageKit = require('../imagekitConfig');
-
-const uploadMultipleFiles = async (files, folder) => {
-  return await Promise.all(
-    files.map((file) =>
-      uploadToImageKit(file, folder)
-    )
-  );
-};
+const uploadToImageKit = require('../utils/uploadToImagekit');
 
 const createServicePage = async (req, res) => {
   try {
@@ -20,17 +12,25 @@ const createServicePage = async (req, res) => {
     const parsedTitleDescArray = JSON.parse(titleDescArray);
     const parsedCategoryname = JSON.parse(categoryname);
 
+    let serviceImageUrl = '';
     const serviceImageFile = req.files?.serviceImage?.[0];
-    const serviceImageUrl = serviceImageFile ? await uploadToImageKit(serviceImageFile, 'serviceImages') : '';
+
+    if (serviceImageFile) {
+      serviceImageUrl = await uploadToImageKit(serviceImageFile, 'serviceImages');
+    }
 
     const categoryImages = req.files?.categoryImages || [];
 
     const categoryWithImages = await Promise.all(
       parsedCategoryname.map(async (item) => {
-        const matchedFiles = categoryImages.filter((file) =>
+        const matchedFiles = categoryImages.filter(file =>
           file.originalname.startsWith(item.tempImagePrefix)
         );
-        const imageUrls = await uploadMultipleFiles(matchedFiles, 'categoryImages');
+
+        const imageUrls = await Promise.all(
+          matchedFiles.map(file => uploadToImageKit(file, 'categoryImages'))
+        );
+
         return {
           title: item.title,
           description: item.description,
@@ -62,17 +62,25 @@ const updateServicePage = async (req, res) => {
     const parsedTitleDescArray = JSON.parse(titleDescArray);
     const parsedCategoryname = JSON.parse(categoryname);
 
+    let serviceImageUrl;
     const serviceImageFile = req.files?.serviceImage?.[0];
-    const serviceImageUrl = serviceImageFile ? await uploadToImageKit(serviceImageFile, 'serviceImages') : undefined;
+
+    if (serviceImageFile) {
+      serviceImageUrl = await uploadToImageKit(serviceImageFile, 'serviceImages');
+    }
 
     const categoryImages = req.files?.categoryImages || [];
 
     const categoryWithImages = await Promise.all(
       parsedCategoryname.map(async (item) => {
-        const matchedFiles = categoryImages.filter((file) =>
+        const matchedFiles = categoryImages.filter(file =>
           file.originalname.startsWith(item.tempImagePrefix)
         );
-        const imageUrls = await uploadMultipleFiles(matchedFiles, 'categoryImages');
+
+        const imageUrls = await Promise.all(
+          matchedFiles.map(file => uploadToImageKit(file, 'categoryImages'))
+        );
+
         return {
           title: item.title,
           description: item.description,
