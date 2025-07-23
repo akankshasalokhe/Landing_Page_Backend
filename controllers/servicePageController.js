@@ -11,36 +11,45 @@ const uploadToImageKit = async (fileBuffer, fileName) => {
 // ✅ Create Service
 exports.createService = async (req, res) => {
   try {
-    const { servicetitle, titleDescArray, categoryname } = req.body;
+    const {
+      servicetitle,
+      titleDescArray,
+      categoryname,
+      catImageCounts, // 👈 new array from frontend [2, 1, 3] etc.
+    } = req.body;
+
     const parsedTitleDesc = JSON.parse(titleDescArray);
     const parsedCategories = JSON.parse(categoryname);
+    const parsedCounts = JSON.parse(catImageCounts);
 
-    const files = req.files || {};
+    const files = req.files?.categoryImages || [];
+    const serviceImageFile = req.files?.serviceImage?.[0];
+
     let serviceImageUrl = null;
-    const catImageMap = {};
-
-    // Upload serviceImage
-    if (files.serviceImage?.length) {
-      const file = files.serviceImage[0];
-      const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+    if (serviceImageFile) {
+      const uploaded = await uploadToImageKit(serviceImageFile.buffer, serviceImageFile.originalname);
       serviceImageUrl = uploaded.url;
     }
 
-    // Upload categoryImages
-    if (files.categoryImages?.length) {
-      for (let file of files.categoryImages) {
-        const [prefix] = file.originalname.split("-");
-        if (!catImageMap[prefix]) catImageMap[prefix] = [];
-        const uploaded = await uploadToImageKit(file.buffer, file.originalname);
-        catImageMap[prefix].push(uploaded.url);
-      }
+    const uploadedCatImages = [];
+    for (let file of files) {
+      const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+      uploadedCatImages.push(uploaded.url);
     }
 
-    const finalCategories = parsedCategories.map(cat => ({
-      title: cat.title,
-      description: cat.description,
-      image: catImageMap[cat.tempImagePrefix] || [],
-    }));
+    // 🔁 Distribute images by count
+    const finalCategories = [];
+    let index = 0;
+    for (let i = 0; i < parsedCategories.length; i++) {
+      const count = parsedCounts[i] || 0;
+      const catImages = uploadedCatImages.slice(index, index + count);
+      finalCategories.push({
+        title: parsedCategories[i].title,
+        description: parsedCategories[i].description,
+        image: catImages,
+      });
+      index += count;
+    }
 
     const service = await ServicePage.create({
       servicetitle,
@@ -51,10 +60,11 @@ exports.createService = async (req, res) => {
 
     res.status(201).json({ success: true, data: service });
   } catch (err) {
-    console.error("Create Error:", err);
+    console.error(err);
     res.status(500).json({ success: false, error: 'Create failed' });
   }
 };
+
 
 // ✅ Get All Services
 exports.getAllServices = async (req, res) => {
