@@ -15,29 +15,32 @@ exports.createService = async (req, res) => {
       servicetitle,
       titleDescArray,
       categoryname,
-      catImageCounts, // 👈 new array from frontend [2, 1, 3] etc.
+      catImageCounts,
     } = req.body;
 
     const parsedTitleDesc = JSON.parse(titleDescArray);
     const parsedCategories = JSON.parse(categoryname);
-    const parsedCounts = JSON.parse(catImageCounts);
+    const parsedCounts = JSON.parse(catImageCounts || '[]');
 
-    const files = req.files?.categoryImages || [];
-    const serviceImageFile = req.files?.serviceImage?.[0];
+    const files = req.files || {};
+    const serviceImageFile = files.serviceImage?.[0];
+    const categoryImageFiles = files.categoryImages || [];
 
+    // Upload service image
     let serviceImageUrl = null;
     if (serviceImageFile) {
       const uploaded = await uploadToImageKit(serviceImageFile.buffer, serviceImageFile.originalname);
       serviceImageUrl = uploaded.url;
     }
 
+    // Upload category images
     const uploadedCatImages = [];
-    for (let file of files) {
+    for (let file of categoryImageFiles) {
       const uploaded = await uploadToImageKit(file.buffer, file.originalname);
       uploadedCatImages.push(uploaded.url);
     }
 
-    // 🔁 Distribute images by count
+    // Group images by count
     const finalCategories = [];
     let index = 0;
     for (let i = 0; i < parsedCategories.length; i++) {
@@ -60,10 +63,11 @@ exports.createService = async (req, res) => {
 
     res.status(201).json({ success: true, data: service });
   } catch (err) {
-    console.error(err);
+    console.error("Create error:", err);
     res.status(500).json({ success: false, error: 'Create failed' });
   }
 };
+
 
 
 // ✅ Get All Services
