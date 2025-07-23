@@ -1,125 +1,126 @@
-const ServicePage = require('../models/servicePageModel');
-const imagekit = require('../imagekitConfig');
-const fs = require('fs');
+const ServicePage = require("../models/servicePageModel");
+const imagekit = require("../imagekitConfig");
 
-// 🔁 Upload file to ImageKit and remove local file
-const uploadToImageKit = async (file, folder = 'servicepage') => {
-  const result = await imagekit.upload({
-    file: fs.readFileSync(file.path),
-    fileName: file.originalname,
-    folder,
+const uploadToImageKit = async (fileBuffer, fileName) => {
+  return await imagekit.upload({
+    file: fileBuffer,
+    fileName,
   });
-  fs.unlinkSync(file.path); // remove temp file
-  return result.url;
 };
 
-// ✅ GET All Services
-exports.getServices = async (req, res) => {
-  try {
-    const services = await ServicePage.find().sort({ createdAt: -1 });
-    res.json({ data: services });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch services', error: err.message });
-  }
-};
-
-// ✅ CREATE Service
 exports.createService = async (req, res) => {
   try {
-    const { servicetitle, titleDescArray, categoryname } = req.body;
+    const {
+      servicetitle,
+      titleDescArray,
+      categoryname,
+    } = req.body;
 
-    const parsedTitleDesc = JSON.parse(titleDescArray || '[]');
-    const parsedCategories = JSON.parse(categoryname || '[]');
+    const parsedTitleDesc = JSON.parse(titleDescArray);
+    const parsedCategories = JSON.parse(categoryname);
 
-    const filesMap = {};
-    for (const file of req.files || []) {
-      const url = await uploadToImageKit(file);
-      filesMap[file.originalname] = url;
+    const files = req.files || [];
+    let serviceImageUrl = null;
+    const catImageMap = {};
+
+    for (let file of files) {
+      if (file.fieldname === 'serviceImage') {
+        const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+        serviceImageUrl = uploaded.url;
+      } else if (file.fieldname === 'categoryImages') {
+        const [prefix] = file.originalname.split("-");
+        if (!catImageMap[prefix]) catImageMap[prefix] = [];
+        const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+        catImageMap[prefix].push(uploaded.url);
+      }
     }
 
-    const serviceImageFile = req.files.find(f => f.fieldname === 'serviceImage');
-    const serviceImageURL = serviceImageFile ? filesMap[serviceImageFile.originalname] : '';
+    const finalCategories = parsedCategories.map(cat => ({
+      title: cat.title,
+      description: cat.description,
+      image: catImageMap[cat.tempImagePrefix] || [],
+    }));
 
-    const finalCategories = parsedCategories.map((cat, idx) => {
-      const prefix = `cat-${idx}-`;
-      const imageUrls = Object.entries(filesMap)
-        .filter(([filename]) => filename.startsWith(prefix))
-        .map(([_, url]) => url);
-
-      return {
-        title: cat.title,
-        description: cat.description,
-        image: imageUrls,
-      };
-    });
-
-    const newService = new ServicePage({
+    const service = await ServicePage.create({
       servicetitle,
-      serviceImage: serviceImageURL,
+      serviceImage: serviceImageUrl,
       titleDescArray: parsedTitleDesc,
       categoryname: finalCategories,
     });
 
-    await newService.save();
-    res.status(201).json({ message: 'Service created successfully', data: newService });
+    res.status(201).json({ success: true, data: service });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to create service', error: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Create failed' });
   }
 };
 
-// ✅ UPDATE Service
+exports.getAllServices = async (req, res) => {
+  try {
+    const services = await ServicePage.find();
+    res.json({ success: true, data: services });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Fetch failed' });
+  }
+};
+
 exports.updateService = async (req, res) => {
   try {
-    const { servicetitle, titleDescArray, categoryname } = req.body;
     const { id } = req.params;
+    const {
+      servicetitle,
+      titleDescArray,
+      categoryname,
+    } = req.body;
 
-    const parsedTitleDesc = JSON.parse(titleDescArray || '[]');
-    const parsedCategories = JSON.parse(categoryname || '[]');
+    const parsedTitleDesc = JSON.parse(titleDescArray);
+    const parsedCategories = JSON.parse(categoryname);
 
-    const filesMap = {};
-    for (const file of req.files || []) {
-      const url = await uploadToImageKit(file);
-      filesMap[file.originalname] = url;
+    const files = req.files || [];
+    let serviceImageUrl = null;
+    const catImageMap = {};
+
+    for (let file of files) {
+      if (file.fieldname === 'serviceImage') {
+        const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+        serviceImageUrl = uploaded.url;
+      } else if (file.fieldname === 'categoryImages') {
+        const [prefix] = file.originalname.split("-");
+        if (!catImageMap[prefix]) catImageMap[prefix] = [];
+        const uploaded = await uploadToImageKit(file.buffer, file.originalname);
+        catImageMap[prefix].push(uploaded.url);
+      }
     }
 
-    const serviceImageFile = req.files.find(f => f.fieldname === 'serviceImage');
-    const serviceImageURL = serviceImageFile ? filesMap[serviceImageFile.originalname] : undefined;
+    const finalCategories = parsedCategories.map(cat => ({
+      title: cat.title,
+      description: cat.description,
+      image: catImageMap[cat.tempImagePrefix] || [],
+    }));
 
-    const finalCategories = parsedCategories.map((cat, idx) => {
-      const prefix = `cat-${idx}-`;
-      const imageUrls = Object.entries(filesMap)
-        .filter(([filename]) => filename.startsWith(prefix))
-        .map(([_, url]) => url);
+    const updated = await ServicePage.findByIdAndUpdate(
+      id,
+      {
+        servicetitle,
+        serviceImage: serviceImageUrl,
+        titleDescArray: parsedTitleDesc,
+        categoryname: finalCategories,
+      },
+      { new: true }
+    );
 
-      return {
-        title: cat.title,
-        description: cat.description,
-        image: imageUrls,
-      };
-    });
-
-    const updateData = {
-      servicetitle,
-      titleDescArray: parsedTitleDesc,
-      categoryname: finalCategories,
-    };
-
-    if (serviceImageURL) updateData.serviceImage = serviceImageURL;
-
-    const updated = await ServicePage.findByIdAndUpdate(id, updateData, { new: true });
-    res.json({ message: 'Service updated successfully', data: updated });
+    res.json({ success: true, data: updated });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to update service', error: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Update failed' });
   }
 };
 
-// ✅ DELETE Service
 exports.deleteService = async (req, res) => {
   try {
-    const { id } = req.params;
-    await ServicePage.findByIdAndDelete(id);
-    res.json({ message: 'Service deleted successfully' });
+    await ServicePage.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to delete service', error: err.message });
+    res.status(500).json({ success: false, error: 'Delete failed' });
   }
 };

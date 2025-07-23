@@ -1,21 +1,21 @@
 const mongoose = require('mongoose');
 
-const CategorySchema = new mongoose.Schema({
+const categorySchema = new mongoose.Schema({
   title: String,
   description: String,
-  image: [String],
+  image: [String], // Multiple image URLs
 });
 
-const TitleDescSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-});
-
-const ServicePageSchema = new mongoose.Schema({
+const serviceSchema = new mongoose.Schema({
   servicetitle: { type: String, required: true },
-  serviceImage: String,
-  titleDescArray: [TitleDescSchema],
-  categoryname: [CategorySchema],
-}, { timestamps: true });
+  serviceImage: { type: String },
+  titleDescArray: [
+    {
+      title: String,
+      description: String,
+    },
+  ],
+  categoryname: [categorySchema],
+});
 
-module.exports = mongoose.model('ServicePage', ServicePageSchema);
+module.exports = mongoose.model('ServicePage', serviceSchema);
