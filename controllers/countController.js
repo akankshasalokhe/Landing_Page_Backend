@@ -1,4 +1,4 @@
-const Count = require('../models/Count');
+const Count = require('../models/countModel');
 
 // Get all count boxes
 exports.getAllCounts = async (req, res) => {
