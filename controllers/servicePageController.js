@@ -1,135 +1,129 @@
 const ServicePage = require('../models/servicePageModel');
 const uploadToImageKit = require('../utils/uploadToImagekit');
 
-const createServicePage = async (req, res) => {
+// Create
+exports.createServicePage = async (req, res) => {
   try {
-    const { servicetitle, titleDescArray, categoryname } = req.body;
+    const { servicetitle, titleDescArray, categoryMeta } = req.body;
+    const parsedCategories = JSON.parse(categoryMeta);
+    const parsedTitleDesc = JSON.parse(titleDescArray);
 
-    if (!servicetitle || !titleDescArray || !categoryname) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
-    const parsedTitleDescArray = JSON.parse(titleDescArray);
-    const parsedCategoryname = JSON.parse(categoryname);
-
-    let serviceImageUrl = '';
-    const serviceImageFile = req.files?.serviceImage?.[0];
-
-    if (serviceImageFile) {
-      serviceImageUrl = await uploadToImageKit(serviceImageFile, 'serviceImages');
-    }
-
-    const categoryImages = req.files?.categoryImages || [];
-
-    const categoryWithImages = await Promise.all(
-      parsedCategoryname.map(async (item) => {
-        const matchedFiles = categoryImages.filter(file =>
-          file.originalname.startsWith(item.tempImagePrefix)
-        );
-
-        const imageUrls = await Promise.all(
-          matchedFiles.map(file => uploadToImageKit(file, 'categoryImages'))
-        );
-
-        return {
-          title: item.title,
-          description: item.description,
-          image: imageUrls,
-        };
-      })
-    );
-
-    const newServicePage = new ServicePage({
-      servicetitle,
-      serviceImage: serviceImageUrl,
-      titleDescArray: parsedTitleDescArray,
-      categoryname: categoryWithImages,
+    const filesMap = {};
+    req.files.forEach(file => {
+      filesMap[file.fieldname] = file;
     });
 
-    await newServicePage.save();
-    res.status(201).json({ message: 'ServicePage created', data: newServicePage });
-  } catch (error) {
-    console.error('Create Error:', error);
-    res.status(500).json({ message: error.message });
+    // Upload service image
+    const serviceImg = filesMap['serviceImage'];
+    const serviceImageUrl = serviceImg
+      ? await uploadToImageKit(serviceImg, `service-page/main`)
+      : '';
+
+    // Upload category images and build array
+    const categories = await Promise.all(parsedCategories.map(async (cat, index) => {
+      const catFile = filesMap[`categoryImage_${index}`];
+      const imageUrl = catFile
+        ? await uploadToImageKit(catFile, `service-page/category/${cat.title}`)
+        : '';
+
+      return {
+        title: cat.title,
+        description: cat.description,
+        image: [imageUrl],
+      };
+    }));
+
+    const newService = new ServicePage({
+      servicetitle,
+      serviceImage: serviceImageUrl,
+      titleDescArray: parsedTitleDesc,
+      categoryname: categories,
+    });
+
+    await newService.save();
+    res.status(201).json({ message: 'Service Page created', data: newService });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error creating service page', details: err.message });
   }
 };
 
-const updateServicePage = async (req, res) => {
+// Get All
+exports.getAllServicePages = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { servicetitle, titleDescArray, categoryname } = req.body;
+    const data = await ServicePage.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+};
 
-    const parsedTitleDescArray = JSON.parse(titleDescArray);
-    const parsedCategoryname = JSON.parse(categoryname);
+// Get By ID
+exports.getServicePageById = async (req, res) => {
+  try {
+    const data = await ServicePage.findById(req.params.id);
+    if (!data) return res.status(404).json({ error: 'Not found' });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+};
 
-    let serviceImageUrl;
-    const serviceImageFile = req.files?.serviceImage?.[0];
+// Update
+exports.updateServicePage = async (req, res) => {
+  try {
+    const { servicetitle, titleDescArray, categoryMeta } = req.body;
+    const parsedCategories = JSON.parse(categoryMeta);
+    const parsedTitleDesc = JSON.parse(titleDescArray);
 
-    if (serviceImageFile) {
-      serviceImageUrl = await uploadToImageKit(serviceImageFile, 'serviceImages');
-    }
+    const filesMap = {};
+    req.files.forEach(file => {
+      filesMap[file.fieldname] = file;
+    });
 
-    const categoryImages = req.files?.categoryImages || [];
+    const serviceImg = filesMap['serviceImage'];
+    const serviceImageUrl = serviceImg
+      ? await uploadToImageKit(serviceImg, `service-page/main`)
+      : null;
 
-    const categoryWithImages = await Promise.all(
-      parsedCategoryname.map(async (item) => {
-        const matchedFiles = categoryImages.filter(file =>
-          file.originalname.startsWith(item.tempImagePrefix)
-        );
+    const categories = await Promise.all(parsedCategories.map(async (cat, index) => {
+      const catFile = filesMap[`categoryImage_${index}`];
+      const imageUrl = catFile
+        ? await uploadToImageKit(catFile, `service-page/category/${cat.title}`)
+        : cat.image?.[0] || '';
 
-        const imageUrls = await Promise.all(
-          matchedFiles.map(file => uploadToImageKit(file, 'categoryImages'))
-        );
-
-        return {
-          title: item.title,
-          description: item.description,
-          image: imageUrls,
-        };
-      })
-    );
+      return {
+        title: cat.title,
+        description: cat.description,
+        image: [imageUrl],
+      };
+    }));
 
     const updated = await ServicePage.findByIdAndUpdate(
-      id,
+      req.params.id,
       {
         servicetitle,
-        ...(serviceImageUrl && { serviceImage: serviceImageUrl }),
-        titleDescArray: parsedTitleDescArray,
-        categoryname: categoryWithImages,
+        serviceImage: serviceImageUrl || undefined,
+        titleDescArray: parsedTitleDesc,
+        categoryname: categories,
       },
       { new: true }
     );
 
-    res.status(200).json({ message: 'ServicePage updated', data: updated });
-  } catch (error) {
-    console.error('Update Error:', error);
-    res.status(500).json({ message: error.message });
+    res.json({ message: 'Updated successfully', data: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update', details: err.message });
   }
 };
 
-const getAllServicePages = async (req, res) => {
+// Delete
+exports.deleteServicePage = async (req, res) => {
   try {
-    const services = await ServicePage.find().lean();
-    res.status(200).json({ data: services });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const deleted = await ServicePage.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Not found' });
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete' });
   }
-};
-
-const deleteServicePage = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await ServicePage.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ message: 'ServicePage not found' });
-    res.status(200).json({ message: 'ServicePage deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-module.exports = {
-  createServicePage,
-  updateServicePage,
-  getAllServicePages,
-  deleteServicePage
 };
