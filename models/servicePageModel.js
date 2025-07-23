@@ -16,6 +16,6 @@ const ServicePageSchema = new mongoose.Schema({
   serviceImage: { type: String, required: true },
   titleDescArray: [TitleDescriptionSchema],
   categoryname: [CategorySchema],
-}, { timestamps: true });
+});
 
 module.exports = mongoose.model('ServicePage', ServicePageSchema);
