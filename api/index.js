@@ -31,6 +31,7 @@ app.use('/api/earning',require('../routes/EarningInfoRoutes.js'))
 app.use('/api/partners',require('../routes/partnerRoutes.js'))
 app.use('/api/counts',require('../routes/countRoutes.js'))
 app.use('/api/benifits',require('../routes/benifitRoutes.js'))
+app.use('/api/nationwide',require('../routes/nationwideRoutes.js'))
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Backend API');
