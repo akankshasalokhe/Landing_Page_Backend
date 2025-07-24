@@ -6,7 +6,7 @@ const {
     createBenefit,
     updateBenefit,
     deleteBenefit,
-} = require('../controllers/benefitController');
+} = require('../controllers/benifitController');
 
 router.get('/get', getAllBenefits);
 router.get('/getbyId/:id', getBenefitById);
