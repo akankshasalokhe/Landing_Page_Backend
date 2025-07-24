@@ -30,6 +30,7 @@ app.use('/api/serviceprovider', require('../routes/serviceProviderRoutes.js'));
 app.use('/api/earning',require('../routes/EarningInfoRoutes.js'))
 app.use('/api/partners',require('../routes/partnerRoutes.js'))
 app.use('/api/counts',require('../routes/countRoutes.js'))
+app.use('/api/benifits',require('../routes/benifitRoutes.js'))
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Backend API');
