@@ -171,3 +171,12 @@ exports.deleteService = async (req, res) => {
     res.status(500).json({ success: false, error: 'Delete failed' });
   }
 };
+
+exports.getTitles = async (req, res) => {
+  try {
+    const services = await ServicePage.find({}, { _id: 1, servicetitle: 1 });
+    res.json({ success: true, data: services });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch titles' });
+  }
+};
