@@ -104,14 +104,12 @@ router.get('/get/:id', async (req, res) => {
   }
 });
 
-router.put('/update/:id', upload.fields([
-  { name: 'image', maxCount: 1 },
-  { name: 'arrayofimage', maxCount: 10 }
-]), async (req, res) => {
+router.put('/update/:id', upload.any(), async (req, res) => {
   try {
     console.log('PUT /update/:id - Body:', req.body, 'Files:', req.files);
+
     const {
-      heading, subheading, image, arrayofimage, features, category,
+      heading, subheading, image, features, category,
       description, earning, requirements, feature2
     } = req.body;
 
@@ -133,48 +131,67 @@ router.put('/update/:id', upload.fields([
     if (requirements !== undefined) updateData.requirements = requirements;
 
     // Arrays
-    if (features !== undefined) updateData.features = JSON.parse(features);
-    if (feature2 !== undefined) updateData.feature2 = JSON.parse(feature2);
+    if (features !== undefined) {
+      try {
+        updateData.features = JSON.parse(features);
+      } catch (err) {
+        console.warn("Invalid features JSON");
+      }
+    }
 
-    // Main image
-    if (req.files?.image?.length > 0) {
+    if (feature2 !== undefined) {
+      try {
+        updateData.feature2 = JSON.parse(feature2);
+      } catch (err) {
+        console.warn("Invalid feature2 JSON");
+      }
+    }
+
+    // Main image (single)
+    if (req.files?.find(f => f.fieldname === 'image')) {
+      const mainImageFile = req.files.find(f => f.fieldname === 'image');
       const uploadedImage = await imagekit.upload({
-        file: req.files.image[0].buffer,
-        fileName: req.files.image[0].originalname
+        file: mainImageFile.buffer,
+        fileName: mainImageFile.originalname
       });
       updateData.image = uploadedImage.url;
     } else if (image !== undefined) {
       updateData.image = image;
     }
 
-    // Replace arrayofimage entirely
-    let updatedArrayImages = [];
+    // ✅ Handle arrayofimage with index-aware updates
+    const arrayIndexMap = req.body.arrayofimageIndexMap
+      ? JSON.parse(req.body.arrayofimageIndexMap)
+      : [];
 
-    // 1. Add old image URLs kept in the frontend
-    if (arrayofimage !== undefined) {
-      try {
-        const parsedUrls = JSON.parse(arrayofimage);
-        if (Array.isArray(parsedUrls)) {
-          updatedArrayImages = parsedUrls.filter(url => typeof url === 'string');
+    const filesByField = {};
+    req.files.forEach(file => {
+      if (!filesByField[file.fieldname]) filesByField[file.fieldname] = [];
+      filesByField[file.fieldname].push(file);
+    });
+
+    let finalImages = [];
+
+    for (const entry of arrayIndexMap) {
+      if (entry.type === 'url') {
+        finalImages[entry.index] = entry.value;
+      } else if (entry.type === 'file') {
+        const key = `arrayofimage_${entry.index}`;
+        const file = filesByField[key]?.[0];
+        if (file) {
+          const uploaded = await imagekit.upload({
+            file: file.buffer,
+            fileName: file.originalname
+          });
+          finalImages[entry.index] = uploaded.url;
         }
-      } catch (err) {
-        console.warn("Invalid arrayofimage JSON");
       }
     }
 
-    // 2. Add newly uploaded images
-    if (req.files?.arrayofimage?.length > 0) {
-      for (const file of req.files.arrayofimage) {
-        const uploaded = await imagekit.upload({
-          file: file.buffer,
-          fileName: file.originalname
-        });
-        updatedArrayImages.push(uploaded.url);
-      }
-    }
+    // Clean nulls if any (in case of unfilled indices)
+    updateData.arrayofimage = finalImages.filter(Boolean);
 
-    updateData.arrayofimage = updatedArrayImages;
-
+    // 🔄 Save updated item
     const updatedItem = await Item.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.status(200).json({ message: "Item updated successfully", data: updatedItem });
 
