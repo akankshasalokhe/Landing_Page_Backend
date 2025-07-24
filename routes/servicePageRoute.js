@@ -22,6 +22,7 @@ router.put(
   ]),
   controller.updateService
 );
+router.get("/get/:id", controller.getServiceById);
 
 router.delete('/delete/:id', controller.deleteService);
 

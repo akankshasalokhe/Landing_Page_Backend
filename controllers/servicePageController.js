@@ -78,6 +78,23 @@ exports.getAllServices = async (req, res) => {
   }
 };
 
+exports.getServiceById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const service = await ServicePage.findById(id);
+
+    if (!service) {
+      return res.status(404).json({ success: false, message: "Service not found" });
+    }
+
+    res.status(200).json({ success: true, data: service });
+  } catch (err) {
+    console.error("Get by ID error:", err);
+    res.status(500).json({ success: false, error: "Fetch by ID failed" });
+  }
+};
+
+
 exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
