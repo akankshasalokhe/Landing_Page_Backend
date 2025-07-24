@@ -18,4 +18,6 @@ const serviceSchema = new mongoose.Schema({
   categoryname: [categorySchema],
 });
 
+
+
 module.exports = mongoose.model('ServicePage', serviceSchema);

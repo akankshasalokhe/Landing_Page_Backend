@@ -25,5 +25,14 @@ router.put(
 router.get("/get/:id", controller.getServiceById);
 
 router.delete('/delete/:id', controller.deleteService);
+// routes/servicepage.js
+router.get("/getAll-titles", async (req, res) => {
+  try {
+    const services = await ServicePage.find({}, { _id: 1, servicetitle: 1 });
+    res.json({ success: true, data: services });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch titles' });
+  }
+});
 
 module.exports = router;
