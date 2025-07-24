@@ -109,7 +109,7 @@ router.put('/update/:id', upload.fields([
   { name: 'arrayofimage', maxCount: 10 }
 ]), async (req, res) => {
   try {
-    console.log('PUT /update/:id - Received body:', req.body, 'Files:', req.files);
+    console.log('PUT /update/:id - Body:', req.body, 'Files:', req.files);
     const {
       heading, subheading, image, arrayofimage, features, category,
       description, earning, requirements, feature2
@@ -124,16 +124,19 @@ router.put('/update/:id', upload.fields([
 
     const updateData = {};
 
+    // Text fields
     if (heading !== undefined) updateData.heading = heading;
     if (subheading !== undefined) updateData.subheading = subheading;
-    if (features !== undefined) updateData.features = JSON.parse(features);
     if (category !== undefined) updateData.category = category;
     if (description !== undefined) updateData.description = description;
     if (earning !== undefined) updateData.earning = earning;
     if (requirements !== undefined) updateData.requirements = requirements;
+
+    // Arrays
+    if (features !== undefined) updateData.features = JSON.parse(features);
     if (feature2 !== undefined) updateData.feature2 = JSON.parse(feature2);
 
-    // Handle main image upload (overwrite)
+    // Main image
     if (req.files?.image?.length > 0) {
       const uploadedImage = await imagekit.upload({
         file: req.files.image[0].buffer,
@@ -144,26 +147,33 @@ router.put('/update/:id', upload.fields([
       updateData.image = image;
     }
 
-    // Handle arrayofimage upload (append to existing)
-    let arrayOfImagesList = item.arrayofimage || [];
+    // Replace arrayofimage entirely
+    let updatedArrayImages = [];
 
-    if (req.files?.arrayofimage?.length > 0) {
-      for (const img of req.files.arrayofimage) {
-        const uploaded = await imagekit.upload({
-          file: img.buffer,
-          fileName: img.originalname
-        });
-        arrayOfImagesList.push(uploaded.url);
+    // 1. Add old image URLs kept in the frontend
+    if (arrayofimage !== undefined) {
+      try {
+        const parsedUrls = JSON.parse(arrayofimage);
+        if (Array.isArray(parsedUrls)) {
+          updatedArrayImages = parsedUrls.filter(url => typeof url === 'string');
+        }
+      } catch (err) {
+        console.warn("Invalid arrayofimage JSON");
       }
     }
 
-    // Include manually passed arrayofimage URLs (from frontend)
-    if (arrayofimage !== undefined) {
-      const manualUrls = JSON.parse(arrayofimage);
-      arrayOfImagesList = [...arrayOfImagesList, ...manualUrls];
+    // 2. Add newly uploaded images
+    if (req.files?.arrayofimage?.length > 0) {
+      for (const file of req.files.arrayofimage) {
+        const uploaded = await imagekit.upload({
+          file: file.buffer,
+          fileName: file.originalname
+        });
+        updatedArrayImages.push(uploaded.url);
+      }
     }
 
-    updateData.arrayofimage = arrayOfImagesList;
+    updateData.arrayofimage = updatedArrayImages;
 
     const updatedItem = await Item.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.status(200).json({ message: "Item updated successfully", data: updatedItem });
@@ -173,6 +183,7 @@ router.put('/update/:id', upload.fields([
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
+
 
 
 // PATCH: Add to features/feature2/arrayofimage (with optional file upload)
