@@ -115,12 +115,14 @@ exports.updateService = async (req, res) => {
     const imageCounts = JSON.parse(categoryImageCounts || '[]');
     const files = req.files || {};
 
-    // Fetch existing service to delete old images if needed
     const existingService = await ServicePage.findById(id);
+    if (!existingService) {
+      return res.status(404).json({ success: false, error: 'Service not found' });
+    }
 
     let serviceImageUrl = existingService.serviceImage;
 
-    // Delete and upload new service image
+    // 🔄 Replace service image if new one is uploaded
     if (files.serviceImage?.[0]) {
       if (existingService.serviceImage) {
         const oldServiceFileId = getImageKitFileId(existingService.serviceImage);
@@ -134,18 +136,9 @@ exports.updateService = async (req, res) => {
       serviceImageUrl = uploaded.url;
     }
 
-    // Delete old category images if new ones provided
+    // 🔄 Upload all new category images (do NOT delete old ones here)
     const uploadedCategoryImages = [];
     if (files.categoryImages?.length) {
-      // Delete all old category images
-      for (const cat of existingService.categoryname || []) {
-        for (const img of cat.image || []) {
-          const oldCatFileId = getImageKitFileId(img);
-          await imagekit.deleteFile(oldCatFileId);
-        }
-      }
-
-      // Upload new ones
       for (const file of files.categoryImages) {
         const uploaded = await imagekit.upload({
           file: file.buffer,
@@ -155,37 +148,40 @@ exports.updateService = async (req, res) => {
       }
     }
 
-    // Build final category list
+    // 🔄 Merge retained + new images per category
     const finalCategories = [];
     let imageIndex = 0;
 
     for (let i = 0; i < parsedCategories.length; i++) {
       const count = imageCounts[i] || 0;
-      const catImages = uploadedCategoryImages.slice(imageIndex, imageIndex + count);
+      const newImages = uploadedCategoryImages.slice(imageIndex, imageIndex + count);
+      const retainedImages = parsedCategories[i].image || [];
+
       finalCategories.push({
         title: parsedCategories[i].title,
         description: parsedCategories[i].description,
-        image: catImages,
+        image: [...retainedImages, ...newImages],
       });
+
       imageIndex += count;
     }
 
     const updatePayload = {
       servicetitle,
-      titleDescArray: parsedTitleDesc,
-      categoryname: finalCategories.length ? finalCategories : existingService.categoryname,
       serviceImage: serviceImageUrl,
+      titleDescArray: parsedTitleDesc,
+      categoryname: finalCategories,
     };
 
     const updated = await ServicePage.findByIdAndUpdate(id, updatePayload, { new: true });
 
-    res.json({ success: true, data: updated });
-
+    res.status(200).json({ success: true, data: updated });
   } catch (err) {
     console.error("Update error:", err);
     res.status(500).json({ success: false, error: 'Update failed' });
   }
 };
+
 
 
 exports.deleteService = async (req, res) => {
