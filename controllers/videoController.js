@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const VideoUpload = require('../models/videoModel');
 const imagekit = require('../imagekitConfig');
 const { v4: uuidv4 } = require('uuid');
@@ -11,18 +9,12 @@ const uploadVideo = async (req, res) => {
       return res.status(400).json({ error: 'No video file provided' });
     }
 
-    const filePath = req.file.path;
-    const fileBuffer = fs.readFileSync(filePath);
-
     const uploadResponse = await imagekit.upload({
-      file: fileBuffer,
+      file: req.file.buffer,
       fileName: `${uuidv4()}-${req.file.originalname}`,
       useUniqueFileName: true,
       folder: '/videos',
     });
-
-    // Delete local file after upload
-    fs.unlinkSync(filePath);
 
     const newVideo = new VideoUpload({
       video: uploadResponse.url,
